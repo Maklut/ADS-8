@@ -1,15 +1,16 @@
 // Copyright 2021 NNTU-CS
 #include <iostream>
 #include <fstream>
+#include <locale>
+#include <cstdlib>
 #include <cctype>
 #include <string>
 #include "bst.h"
 
 void makeTree(BST<std::string>& tree, const char* filename) {
     std::ifstream file(filename);
-    
     if (!file) {
-        std::cout << "File error!" << std::endl;
+        std::cerr << "File error: Cannot open " << filename << std::endl;
         return;
     }
     
@@ -17,20 +18,14 @@ void makeTree(BST<std::string>& tree, const char* filename) {
     char ch;
     
     while (file.get(ch)) {
-        // Проверяем, является ли символ латинской буквой
-        if (isalpha(ch) && (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')) {
-            // Преобразуем в нижний регистр
-            word += tolower(ch);
-        } else {
-            // Если встретили не букву и слово не пустое, добавляем в дерево
-            if (!word.empty()) {
-                tree.insert(word);
-                word.clear();
-            }
+        if (std::isalpha(static_cast<unsigned char>(ch))) {
+            word += std::tolower(static_cast<unsigned char>(ch));
+        } else if (!word.empty()) {
+            tree.insert(word);
+            word.clear();
         }
     }
     
-    // Проверяем, осталось ли слово после окончания файла
     if (!word.empty()) {
         tree.insert(word);
     }
@@ -39,19 +34,18 @@ void makeTree(BST<std::string>& tree, const char* filename) {
 }
 
 void printFreq(BST<std::string>& tree) {
-    // Создаем файл для вывода
-    std::ofstream outFile("result/freq.txt");
+    std::vector<std::pair<std::string, int>> nodes = tree.getNodesSortedByFrequency();
     
-    if (!outFile) {
-        std::cout << "Cannot create output file!" << std::endl;
+    std::ofstream outfile("result/freq.txt");
+    if (!outfile) {
+        std::cerr << "Error: Cannot create result/freq.txt" << std::endl;
         return;
     }
     
-    // Выводим в файл
-    tree.printFreq(outFile);
+    for (const auto& node : nodes) {
+        std::cout << node.first << ": " << node.second << std::endl;
+        outfile << node.first << ": " << node.second << std::endl;
+    }
     
-    // Также выводим на экран для проверки
-    std::cout << "Frequency analysis completed. Results saved to result/freq.txt" << std::endl;
-    
-    outFile.close();
+    outfile.close();
 }
