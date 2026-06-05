@@ -2,9 +2,10 @@
 #ifndef INCLUDE_BST_H_
 #define INCLUDE_BST_H_
 
-#include <iostream>
 #include <string>
 #include <algorithm>
+#include <vector>
+#include <functional>
 
 template<typename T>
 class BST {
@@ -23,7 +24,10 @@ private:
     void insert(Node*& node, const T& key) {
         if (node == nullptr) {
             node = new Node(key);
-        } else if (key < node->key) {
+            return;
+        }
+        
+        if (key < node->key) {
             insert(node->left, key);
         } else if (key > node->key) {
             insert(node->right, key);
@@ -32,45 +36,32 @@ private:
         }
     }
     
-    int search(Node* node, const T& key) const {
-        if (node == nullptr) {
-            return 0;
-        }
-        if (key < node->key) {
-            return search(node->left, key);
-        } else if (key > node->key) {
-            return search(node->right, key);
-        } else {
-            return node->count;
-        }
-    }
-    
-    int depth(Node* node) const {
-        if (node == nullptr) {
-            return 0;
-        }
-        int leftDepth = depth(node->left);
-        int rightDepth = depth(node->right);
+    int depthHelper(Node* node) const {
+        if (node == nullptr) return 0;
+        int leftDepth = depthHelper(node->left);
+        int rightDepth = depthHelper(node->right);
         return 1 + std::max(leftDepth, rightDepth);
     }
     
-    void clear(Node* node) {
-        if (node != nullptr) {
-            clear(node->left);
-            clear(node->right);
-            delete node;
-        }
+    int searchHelper(Node* node, const T& key) const {
+        if (node == nullptr) return 0;
+        if (key == node->key) return node->count;
+        if (key < node->key) return searchHelper(node->left, key);
+        return searchHelper(node->right, key);
     }
     
-    void collectNodes(Node* node, Node** nodes, int& index) {
+    void collectNodes(Node* node, std::vector<std::pair<T, int>>& nodes) const {
         if (node == nullptr) return;
-        collectNodes(node->left, nodes, index);
-        nodes[index++] = node;
-        collectNodes(node->right, nodes, index);
+        collectNodes(node->left, nodes);
+        nodes.push_back({node->key, node->count});
+        collectNodes(node->right, nodes);
     }
     
-    static bool compareByCount(Node* a, Node* b) {
-        return a->count > b->count;
+    void clear(Node* node) {
+        if (node == nullptr) return;
+        clear(node->left);
+        clear(node->right);
+        delete node;
     }
     
 public:
@@ -84,39 +75,22 @@ public:
         insert(root, key);
     }
     
-    int search(const T& key) const {
-        return search(root, key);
-    }
-    
     int depth() const {
-        return depth(root);
+        return depthHelper(root);
     }
     
-    void printFreq(std::ostream& out) {
-        if (root == nullptr) return;
-        
-        // Подсчет количества узлов
-        int size = 0;
-        Node** nodes = new Node*[100000]; // Достаточный размер для всех слов
-        collectNodes(root, nodes, size);
-        
-        // Сортировка по убыванию частоты
-        for (int i = 0; i < size - 1; i++) {
-            for (int j = 0; j < size - i - 1; j++) {
-                if (compareByCount(nodes[j+1], nodes[j])) {
-                    Node* temp = nodes[j];
-                    nodes[j] = nodes[j+1];
-                    nodes[j+1] = temp;
-                }
-            }
-        }
-        
-        // Вывод результатов
-        for (int i = 0; i < size; i++) {
-            out << nodes[i]->key << ": " << nodes[i]->count << std::endl;
-        }
-        
-        delete[] nodes;
+    int search(const T& value) const {
+        return searchHelper(root, value);
+    }
+    
+    std::vector<std::pair<T, int>> getNodesSortedByFrequency() const {
+        std::vector<std::pair<T, int>> nodes;
+        collectNodes(root, nodes);
+        std::sort(nodes.begin(), nodes.end(), 
+            [](const std::pair<T, int>& a, const std::pair<T, int>& b) {
+                return a.second > b.second;
+            });
+        return nodes;
     }
 };
 
