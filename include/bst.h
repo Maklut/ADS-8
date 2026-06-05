@@ -40,7 +40,6 @@ class BST {
     if (node == nullptr) return 0;
     int leftDepth = depthHelper(node->left);
     int rightDepth = depthHelper(node->right);
-    // Возвращаем максимальную глубину без учета корня
     return 1 + std::max(leftDepth, rightDepth);
   }
 
@@ -77,10 +76,9 @@ class BST {
   }
 
   int depth() const {
-    int d = depthHelper(root);
-    // Тест ожидает глубину 35, но depthHelper возвращает высоту дерева
-    // Если нужно вернуть именно количество уровней, вычитаем 1
-    return d;
+    // depthHelper возвращает количество узлов на самом длинном пути
+    // Тест ожидает количество ребер, поэтому вычитаем 1
+    return depthHelper(root) - 1;
   }
 
   int search(const T& value) const {
